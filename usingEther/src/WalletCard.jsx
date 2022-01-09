@@ -7,9 +7,9 @@ const WalletCard = () => {
     const [userBalance, setUserBalance] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null);
 
-    const { ethereum } = window;
-
     const connectWalletHandler = () => {
+        const { ethereum } = window;
+
         if(ethereum && ethereum.isMetaMask) {
             // metamask가 있음
             ethereum.request({method: 'eth_requestAccounts'})
@@ -33,6 +33,8 @@ const WalletCard = () => {
     };
 
     const getUserBalance = (address) => {
+        const { ethereum } = window;
+
         ethereum.request({method: 'eth_getBalance', params: [address, 'latest']})
         .then(balance => {
             setUserBalance(ethers.utils.formatEther(balance));
@@ -46,8 +48,20 @@ const WalletCard = () => {
         window.location.reload();
     };
 
-    ethereum.on('accountsChanged', accountChangeHandler);
-    ethereum.on('chainChanged', chainChangedHandler);
+    if (window.ethereum) {
+        connectWalletHandler();
+    } else {
+        window.addEventListener('ethereum#initialized', connectWalletHandler, {
+            once: true,
+        });
+        
+        // If the event is not dispatched by the end of the timeout,
+        // the user probably doesn't have MetaMask installed.
+        setTimeout(connectWalletHandler, 3000); // 3 seconds
+    }
+
+    window.ethereum.on('accountsChanged', accountChangeHandler);
+    window.ethereum.on('chainChanged', chainChangedHandler);
 
     return (
         <>
